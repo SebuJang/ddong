@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>토끼 게임</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+	<div id="characterSelection">
+		<h2>캐릭터를 선택하세요</h2>
+		<button onclick="startGame('rabbit')">토끼</button>
+		<button onclick="startGame('princess')">공주</button>
+	</div>
+
+	<canvas id="gameCanvas" width="800" height="600" style="display: none;"></canvas>
+	<button id="pauseButton" style="display: none;">일시정지</button>
+
+    <script src="game.js"></script>
+</body>
+</html>

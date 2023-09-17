@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Game</title>
+</head>
+
+<body>
+	<div id="characterSelection">
+		<h2>캐릭터를 선택하세요</h2>
+		<button onclick="startGame('single')">토끼</button>
+		<button onclick="startGame('single', 'princess')">공주</button>
+		<button onclick="startGame('dual')">토끼 & 공주</button>
+	</div>
+
+	<canvas id="gameCanvas" width="800" height="600" style="display: none;"></canvas>
+	<button id="pauseButton" style="display: none;">일시정지</button>
+	
+</body>
+
+<script lang="javascript">
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const rabbitImage = new Image();
+  rabbitImage.src = 'rabbit.png';
+
+  const princessImage = new Image();
+  princessImage.src = 'princess.png';
+
+  const heartImage = new Image();
+  heartImage.src = 'heart.png';
+
+  const poopImage = new Image();
+  poopImage.src = 'ddong.png';
+
+  let hearts = [];
+  let poops = [];
+  let isPaused = false;
+  let gameMode = '';
+
+  let player1 = {
+    x: 300,
+    y: canvas.height - 70,
+    size: 50,
+    speed: 15,
+    score: 0,
+    life: 3,
+    image: princessImage
+  };
+
+  let player2 = {
+    x: 500,
+    y: canvas.height - 70,
+    size: 50,
+    speed: 15,
+    score: 0,
+    life: 3,
+    image: rabbitImage
+  };
+
+  document.addEventListener('keydown', function (event) {
+    if (!isPaused) {
+      switch (event.key) {
+        case 'ArrowLeft':
+          player2.x -= player2.speed;
+          break;
+        case 'ArrowRight':
+          player2.x += player2.speed;
+          break;
+        case 'a':
+          player1.x -= player1.speed;
+          break;
+        case 's':
+          player1.x += player1.speed;
+          break;
+      }
+      player1.x = Math.max(0, Math.min(canvas.width - player1.size, player1.x));
+      player2.x = Math.max(0, Math.min(canvas.width - player2.size, player2.x));
+    }
+  });
+
+  function startGame(mode, character = 'rabbit') {
+    gameMode = mode;
+    document.getElementById('characterSelection').style.display = 'none';
+    document.getElementById('gameCanvas').style.display = 'block';
+    document.getElementById('pauseButton').style.display = 'block';
+
+    if (gameMode === 'single') {
+      if (character === 'rabbit') {
+        player1.image = rabbitImage;
+      } else {
+        player1.image = princessImage;
+      }
+      player2.life = 0;
+    } else {
+      // player1.image = rabbitImage;
+      // player2.image = princessImage;
+    }
+    animate();
+  }
+
+  function spawnHeart() {
+    const heart = {
+      x: Math.random() * (canvas.width - 30),
+      y: 0,
+      size: 30,
+      speed: 1 + (Math.floor(Math.max(player1.score, player2.score) / 100) * 0.5)
+    };
+    hearts.push(heart);
+  }
+
+  function spawnPoop() {
+    const poop = {
+      x: Math.random() * (canvas.width - 30),
+      y: 0,
+      size: 30,
+      speed: 1 + (Math.floor(Math.max(player1.score, player2.score) / 100) * 0.5)
+    };
+    poops.push(poop);
+  }
+
+  function moveItems() {
+    hearts.forEach(heart => {
+      heart.y += heart.speed;
+    });
+
+    poops.forEach(poop => {
+      poop.y += poop.speed;
+    });
+  }
+
+  function checkCollision(player) {
+    for (let i = hearts.length - 1; i >= 0; i--) {
+      if (player.x < hearts[i].x + hearts[i].size &&
+        player.x + player.size > hearts[i].x &&
+        player.y < hearts[i].y + hearts[i].size &&
+        player.y + player.size > hearts[i].y) {
+        player.score += 10;
+        hearts.splice(i, 1);
+        spawnHeart();
+      }
+    }
+
+    for (let i = poops.length - 1; i >= 0; i--) {
+      if (player.x < poops[i].x + poops[i].size &&
+        player.x + player.size > poops[i].x &&
+        player.y < poops[i].y + poops[i].size &&
+        player.y + player.size > poops[i].y) {
+        player.life -= 1;
+        poops.splice(i, 1);
+        spawnPoop();
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    hearts.forEach(heart => {
+      ctx.drawImage(heartImage, heart.x, heart.y, heart.size, heart.size);
+    });
+
+    poops.forEach(poop => {
+      ctx.drawImage(poopImage, poop.x, poop.y, poop.size, poop.size);
+    });
+
+    if (player1.life > 0) {
+      ctx.drawImage(player1.image, player1.x, player1.y, player1.size, player1.size);
+    }
+    if (player2.life > 0) {
+      ctx.drawImage(player2.image, player2.x, player2.y, player2.size, player2.size);
+    }
+
+    // Score & Life Display
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "black";
+    ctx.fillText("토끼 점수: " + player1.score + " 생명: " + player1.life, 10, 30);
+    ctx.fillText("공주 점수: " + player2.score + " 생명: " + player2.life, 10, 60);
+
+    // End game check
+    if ((gameMode === 'single' && player1.life <= 0) || (gameMode === 'dual' && player1.life <= 0 && player2.life <= 0)) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = "30px Arial";
+      ctx.fillText("게임 오버", canvas.width / 2 - 60, canvas.height / 2);
+      let yPos = 60;
+      if(player1.score > 0) {
+        ctx.fillText("토끼 점수: " + player1.score + " 생명: " + player1.life, canvas.width / 2 - 60, canvas.height / 2 + yPos)
+        yPos += 60;
+      }
+      if(player2.score > 0) {
+        ctx.fillText("공주 점수: " + player2.score + " 생명: " + player2.life, canvas.width / 2 - 60, canvas.height / 2 + yPos)
+        yPos += 60;
+      }
+    }
+  }
+
+  function animate() {
+    if (Math.random() < 0.02) spawnHeart();
+    if (Math.random() < 0.02) spawnPoop();
+
+    moveItems();
+
+    if (player1.life > 0) checkCollision(player1);
+    if (player2.life > 0) checkCollision(player2);
+
+    draw();
+
+    if ((gameMode === 'single' && player1.life > 0) || (gameMode === 'dual' && (player1.life > 0 || player2.life > 0))) {
+      requestAnimationFrame(animate);
+    }
+  }
+
+  document.getElementById('pauseButton').addEventListener('click', function () {
+    isPaused = !isPaused;
+    if (!isPaused) animate();
+  });
+</script>
+
+</html>
